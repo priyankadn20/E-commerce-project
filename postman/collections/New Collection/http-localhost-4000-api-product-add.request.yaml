@@ -1,0 +1,68 @@
+$kind: http-request
+name: http://localhost:4000/api/product/add
+url: http://localhost:4000/api/product/add
+method: POST
+body:
+  type: formdata
+  content:
+    - type: text
+      key: name
+      value: testing name
+      description: ""
+      disabled: false
+    - type: text
+      key: description
+      value: decs
+      description: ""
+      disabled: false
+    - type: text
+      key: price
+      value: "10"
+      description: ""
+      disabled: false
+    - type: text
+      key: bestseller
+      value: "true"
+      description: ""
+      disabled: false
+    - type: text
+      key: category
+      value: Men
+      description: ""
+      disabled: false
+    - type: text
+      key: subCategory
+      value: topware
+      description: ""
+      disabled: false
+    - type: text
+      key: sizes
+      value: '["M"]'
+      description: ""
+      disabled: false
+    - type: file
+      key: image1
+      src:
+        - postman-cloud:///1f14bcb4-a12d-4af0-a3c8-598aa55344a2
+      description: ""
+      disabled: false
+    - type: file
+      key: image2
+      src:
+        - postman-cloud:///1f14bcb5-d6ee-48f0-8aa0-1753d5b3d0e8
+      description: ""
+      disabled: false
+    - type: file
+      key: image3
+      src:
+        - postman-cloud:///1f14bcb6-a55a-4cc0-a650-c0daa62c9269
+      description: ""
+      disabled: false
+    - type: file
+      key: image4
+      src:
+        - postman-cloud:///1f14bcb7-8326-4950-b94d-7d5035eb6bde
+      description: ""
+      disabled: false
+examples: .resources/http-localhost-4000-api-product-add.resources/examples
+order: 1778348941277
