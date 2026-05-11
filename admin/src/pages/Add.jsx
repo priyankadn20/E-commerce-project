@@ -16,7 +16,7 @@ const Add = ({token}) => {
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [price, setPrice] = useState("");
-    const [category, setCategory] = useState("Men");
+    const [category, setCategory] = useState("Men");      
     const [subCategory, setSubCategory] = useState("Topwear");
     const [sizes, setSizes] = useState([]);
     const [isBestSeller, setIsBestSeller] = useState(false);
@@ -33,7 +33,7 @@ const Add = ({token}) => {
             formData.append('category', category);
             formData.append('subCategory', subCategory);
             formData.append('sizes', JSON.stringify(sizes));
-            formData.append('isBestSeller', isBestSeller);
+            formData.append('bestseller', isBestSeller);
 
             image1 && formData.append('image1', image1);
             image2 && formData.append('image2', image2);
@@ -100,17 +100,17 @@ return (
             <div>
                 <p className='mb-2'>Product Category</p>
                 <select onChange={(e) => setCategory(e.target.value)} value={category} className="w-full px-2 py-2">
-                    <option value="men">Men</option>
-                    <option value="women">Women</option>
-                    <option value="kids">Kids</option>
+                    <option value="Men">Men</option>
+                    <option value="Women">Women</option>
+                    <option value="Kids">Kids</option>
                 </select>
             </div>
             <div>
                 <p className='mb-2'>Sub Category</p>
                 <select onChange={(e) => setSubCategory(e.target.value)} value={subCategory} className="w-full px-2 py-2">
-                    <option value="topwear">Top Wear</option>
-                    <option value="bottomwear">Bottom Wear</option>
-                    <option value="winterwear">Winter Wear</option>
+                    <option value="Topwear">Top Wear</option>
+                    <option value="Bottomwear">Bottom Wear</option>
+                    <option value="Winterwear">Winter Wear</option>
                 </select>
             </div>
             <div>

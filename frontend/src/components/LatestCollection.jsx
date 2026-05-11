@@ -1,5 +1,4 @@
 import React, { use, useContext, useEffect, useState } from "react";
-import { products } from "../assets/assets";
 import { ShopContext } from "../context/ShopContext";
 import Title from "./Title";
 import ProductItem from "./ProductItem";
@@ -10,7 +9,7 @@ const LatestCollection = () => {
 
   useEffect(()=>{
     setLatestProduct(products.slice(0,10));
-  },[])
+  },[products])
 
   return (
     <div className="my-10">
