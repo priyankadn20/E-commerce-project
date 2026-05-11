@@ -85,4 +85,6 @@ const singleProduct = async (req, res) => {
 
 }
 
+
+
 export { addProduct, listProducts, removeProduct, singleProduct };
