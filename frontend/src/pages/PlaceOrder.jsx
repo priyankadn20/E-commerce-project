@@ -3,11 +3,14 @@ import Title from "../components/Title";
 import CartTotal from "../components/CartTotal";
 import { assets } from "../assets/assets";
 import { ShopContext } from "../context/ShopContext";
+import { toast } from "react-toastify";
 import axios from "axios";
+
+
 
 const PlaceOrder = () => {
   const [method, setMethod] = useState("cod");
-    const { navigate, backend_url, token, cartItems, setCartItems, getCartAmount, delivery_free, products } = useContext(ShopContext);
+    const { navigate, backend_url, token, cartItems, setCartItems, getCartAmount, delivery_fee, products } = useContext(ShopContext);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -47,12 +50,22 @@ const PlaceOrder = () => {
      let orderData = {
       address: formData,
       items: orderItems,
-      amount: getCartAmount() + delivery_free,
+      amount: getCartAmount() + delivery_fee,
      }
      switch (method) {
       //API CALL for cash on delivery
       case "cod":
-        const response = await a
+        const response = await axios.post(backend_url + "/api/order/place", orderData, {
+          headers: {
+            token: token
+          }
+        });
+        if(response.data.success){
+          setCartItems({});
+          navigate('/orders');
+        }else{
+          toast.error(response.data.message);
+        }
 
       break;
       default:
@@ -61,6 +74,7 @@ const PlaceOrder = () => {
 
     } catch (error) {
         console.log(error);
+        toast.error(error.message);
     }
    
   }
