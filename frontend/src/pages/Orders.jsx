@@ -64,13 +64,13 @@ const Orders = () => {
                   <p>Quantity: {item.quantity}</p>
                   <p>Size: {item.size}</p>
                 </div>
-                <p className="mt-2">
+                <p className="mt-1">
                   Date :{" "}
                   <span className="text-gray-400">
                     {new Date(item.date).toLocaleDateString("en-GB")}
                   </span>
                 </p>
-                 <p className="mt-2">
+                 <p className="mt-1">
                   Payment :{" "}
                   <span className="text-gray-400">
                     {item.payment ? "Paid" : "Not Paid"}

@@ -42,6 +42,13 @@ const placeOrderNagad = async (req, res) => {
 
 //all orders of a admin panel
 const allOrders = async (req, res) => {
+    try{
+        const orders = await orderModel.find({});
+        res.json({success: true, orders});
+    } catch (error) {
+        console.log(error);
+        res.json({success: false, message: error.message});
+    }
 
 }
 
