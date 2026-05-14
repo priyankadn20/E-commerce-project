@@ -10,7 +10,7 @@ import axios from "axios";
 
 const PlaceOrder = () => {
   const [method, setMethod] = useState("cod");
-    const { navigate, backend_url, token, cartItems, setCartItems, getCartAmount, delivery_fee, products } = useContext(ShopContext);
+  const { navigate, backend_url, token, cartItems, setCartItems, getCartAmount, delivery_fee, products } = useContext(ShopContext);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -47,36 +47,48 @@ const PlaceOrder = () => {
           }
         }
       }
-     let orderData = {
-      address: formData,
-      items: orderItems,
-      amount: getCartAmount() + delivery_fee,
-     }
-     switch (method) {
-      //API CALL for cash on delivery
-      case "cod":
-        const response = await axios.post(backend_url + "/api/order/place", orderData, {
-          headers: {
-            token: token
+      let orderData = {
+        address: formData,
+        items: orderItems,
+        amount: getCartAmount() + delivery_fee,
+      }
+      switch (method) {
+        //API CALL for cash on delivery
+        case "cod":
+          const response = await axios.post(backend_url + "/api/order/place", orderData, {
+            headers: {
+              token: token
+            }
+          });
+          if (response.data.success) {
+            setCartItems({});
+            navigate('/orders');
+          } else {
+            toast.error(response.data.message);
           }
-        });
-        if(response.data.success){
-          setCartItems({});
-          navigate('/orders');
-        }else{
-          toast.error(response.data.message);
-        }
 
-      break;
-      default:
-        break;
-     }
+          break;
+        case 'bkash': {
+          const response = await axios.post(backend_url + '/api/order/place/bkash', orderData, { headers: { token } });
+          if (response.data.success) window.location.href = response.data.payment_url;
+          else toast.error(response.data.message);
+          break;
+        }
+        case 'nagad': {
+          const response = await axios.post(backend_url + '/api/order/place/nagad', orderData, { headers: { token } });
+          if (response.data.success) window.location.href = response.data.payment_url;
+          else toast.error(response.data.message);
+          break;
+        }
+        default:
+          break;
+      }
 
     } catch (error) {
-        console.log(error);
-        toast.error(error.message);
+      console.log(error);
+      toast.error(error.message);
     }
-   
+
   }
 
 

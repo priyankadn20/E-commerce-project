@@ -1,146 +1,229 @@
 import orderModel from '../models/orderModel.js';
 import userModel from '../models/userModel.js';
-import Bkash from 'bkash';
-import axios from 'axios';
+import SSLCommerzPayment from 'sslcommerz-lts';
 
-//global variable
+const deliveryCharge = 80;
 
-const currency = 'BDT';
-const deliveryCharge = 80
-
-//getway initialize 
-const bkash = new Bkash(process.env.BKASH_SECRET_KEY)
-
-//placing orders usong COD method
+// ─────────────────────────────────────────
+// COD
+// ─────────────────────────────────────────
 const placeOrder = async (req, res) => {
-
-    try{
-        const{userId , items, amount, address} = req.body;
-
-        const orderData = {
-            userId,
-            items,
-            amount,
-            address,
-            paymentMethod: "COD",
+    try {
+        const { userId, items, amount, address } = req.body;
+        const newOrder = new orderModel({
+            userId, items, amount, address,
+            paymentMethod: 'COD',
             payment: false,
             date: Date.now(),
-        }
-
-        const newOrder = new orderModel(orderData);
+        });
         await newOrder.save();
-        await userModel.findByIdAndUpdate(userId, {cartData: {}});
-        res.json({success: true, message: "Order placed successfully"});
-
-    }catch (error) {
+        await userModel.findByIdAndUpdate(userId, { cartData: {} });
+        res.json({ success: true, message: 'Order placed successfully' });
+    } catch (error) {
         console.log(error);
         res.json({ success: false, message: error.message });
     }
+};
 
-}
-
-//placing orders using bkash payment method
+// ─────────────────────────────────────────
+// SSLCommerz — bKash
+// ─────────────────────────────────────────
 const placeOrderBkash = async (req, res) => {
-  try{
-     const{userId , items, amount, address} = req.body;
-     const { origin } = req.headers;
+    try {
+        const { userId, items, amount, address } = req.body;
 
-     const orderData = {
-            userId,
-            items,
-            amount,
-            address,
-            paymentMethod: "Bkash",
+        const newOrder = new orderModel({
+            userId, items, amount, address,
+            paymentMethod: 'Bkash',
             payment: false,
             date: Date.now(),
-        }
-
-        const newOrder = new orderModel(orderData);
+        });
         await newOrder.save();
 
-        const line_items = items.map(item => ({
-            price_data: {
-                currency: 'BDT ',
-                product_data: {
-                    name: item.name,
-                },
-                unit_amount: item.price * 100,
-            },
-            quantity: item.quantity
+        const data = {
+            total_amount: amount,
+            currency: 'BDT',
+            tran_id: newOrder._id.toString(),
+            success_url: `${process.env.BACKEND_URL}/api/order/verify/ssl?orderId=${newOrder._id}&success=true`,
+            fail_url: `${process.env.BACKEND_URL}/api/order/verify/ssl?orderId=${newOrder._id}&success=false`,
+            cancel_url: `${process.env.BACKEND_URL}/api/order/verify/ssl?orderId=${newOrder._id}&success=false`,
+            shipping_method: 'Courier',
+            product_name: 'E-commerce Order',
+            product_category: 'General',
+            product_profile: 'general',
+            cus_name: address.firstName + ' ' + address.lastName,
+            cus_email: address.email,
+            cus_add1: address.street,
+            cus_city: address.city,
+            cus_state: address.state,
+            cus_postcode: address.zipcode,
+            cus_country: address.country,
+            cus_phone: address.phone,
+            ship_name: address.firstName + ' ' + address.lastName,
+            ship_add1: address.street,
+            ship_city: address.city,
+            ship_state: address.state,
+            ship_postcode: address.zipcode,
+            ship_country: address.country,
+        };
 
-        }))
+        const sslcz = new SSLCommerzPayment(
+            process.env.SSLC_STORE_ID,
+            process.env.SSLC_STORE_PASSWORD,
+            false // ✅ sandbox mode
+        );
 
-        line_items.push({
-            price_data: {
-                currency: 'BDT ',
-                product_data: {
-                    name: "Delivery Charges",
-                },
-                unit_amount: deliveryCharge * 100,
-            },
-            quantity: 1
-        })
+        const apiResponse = await sslcz.init(data);
 
-        const session = await bkash.checkout.sessions.create({
-            seccess_url:`${origin}/verify?success=true&orderId=${newOrder._id}`,
-            cancel_url:```${origin}/verify?success=false&orderId=${newOrder._id}`
-            line_items,
-            mode:'payment',
-        })
+        console.log("SSL API Response:", JSON.stringify(apiResponse)); // ✅ debug log
 
+        if (apiResponse?.GatewayPageURL) {
+            return res.json({ success: true, payment_url: apiResponse.GatewayPageURL });
+        } else {
+            await orderModel.findByIdAndDelete(newOrder._id);
+            return res.json({ success: false, message: 'SSL payment init failed' });
+        }
 
-
-  }catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
-
-  }
-
-}
-
-//placing orders using nagad payment method
-
-const placeOrderNagad = async (req, res) => {
-
-}
-
-//all orders of a admin panel
-const allOrders = async (req, res) => {
-    try{
-        const orders = await orderModel.find({});
-        res.json({success: true, orders});
     } catch (error) {
         console.log(error);
-        res.json({success: false, message: error.message});
+        res.json({ success: false, message: error.message });
     }
+};
 
-}
+// ─────────────────────────────────────────
+// SSLCommerz — Nagad
+// ─────────────────────────────────────────
+const placeOrderNagad = async (req, res) => {
+    try {
+        const { userId, items, amount, address } = req.body;
 
-//user order data for frontend
+        const newOrder = new orderModel({
+            userId, items, amount, address,
+            paymentMethod: 'Nagad',
+            payment: false,
+            date: Date.now(),
+        });
+        await newOrder.save();
+
+        const data = {
+            total_amount: amount,
+            currency: 'BDT',
+            tran_id: newOrder._id.toString(),
+            success_url: `${process.env.BACKEND_URL}/api/order/verify/ssl?orderId=${newOrder._id}&success=true`,
+            fail_url: `${process.env.BACKEND_URL}/api/order/verify/ssl?orderId=${newOrder._id}&success=false`,
+            cancel_url: `${process.env.BACKEND_URL}/api/order/verify/ssl?orderId=${newOrder._id}&success=false`,
+            shipping_method: 'Courier',
+            product_name: 'E-commerce Order',
+            product_category: 'General',
+            product_profile: 'general',
+            cus_name: address.firstName + ' ' + address.lastName,
+            cus_email: address.email,
+            cus_add1: address.street,
+            cus_city: address.city,
+            cus_state: address.state,
+            cus_postcode: address.zipcode,
+            cus_country: address.country,
+            cus_phone: address.phone,
+            ship_name: address.firstName + ' ' + address.lastName,
+            ship_add1: address.street,
+            ship_city: address.city,
+            ship_state: address.state,
+            ship_postcode: address.zipcode,
+            ship_country: address.country,
+        };
+
+        const sslcz = new SSLCommerzPayment(
+            process.env.SSLC_STORE_ID,
+            process.env.SSLC_STORE_PASSWORD,
+            false  // ✅ sandbox mode
+        );
+
+        const apiResponse = await sslcz.init(data);
+
+        console.log("SSL API Response:", JSON.stringify(apiResponse)); // ✅ debug log
+
+        if (apiResponse?.GatewayPageURL) {
+            return res.json({ success: true, payment_url: apiResponse.GatewayPageURL });
+        } else {
+            await orderModel.findByIdAndDelete(newOrder._id);
+            return res.json({ success: false, message: 'SSL payment init failed' });
+        }
+
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// ─────────────────────────────────────────
+// SSL Verify — Payment success/fail
+// ─────────────────────────────────────────
+const verifySSL = async (req, res) => {
+    try {
+        const orderId = req.query.orderId || req.body.orderId;
+        const success = req.query.success || req.body.value_a;
+
+        if (success === 'false' || success === 'FAILED') {
+            await orderModel.findByIdAndDelete(orderId);
+            return res.redirect(`${process.env.FRONTEND_URL}/cart`);
+        }
+
+        const order = await orderModel.findByIdAndUpdate(
+            orderId,
+            { payment: true },
+            { new: true }
+        );
+        await userModel.findByIdAndUpdate(order.userId, { cartData: {} });
+        return res.redirect(`${process.env.FRONTEND_URL}/orders`);
+
+    } catch (error) {
+        console.log(error);
+        return res.redirect(`${process.env.FRONTEND_URL}/cart`);
+    }
+};
+
+const verifyBkash = verifySSL;
+const verifyNagad = verifySSL;
+
+// ─────────────────────────────────────────
+// Admin / User
+// ─────────────────────────────────────────
+const allOrders = async (req, res) => {
+    try {
+        const orders = await orderModel.find({});
+        res.json({ success: true, orders });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
 const userOrders = async (req, res) => {
     try {
-
-        const {userId} = req.body;
-        const  orders = await orderModel.find({userId})
-        res.json({success: true, orders});
-    }catch (error) {
+        const { userId } = req.body;
+        const orders = await orderModel.find({ userId });
+        res.json({ success: true, orders });
+    } catch (error) {
         console.log(error);
-        res.json({success: false, message: error.message});
+        res.json({ success: false, message: error.message });
     }
+};
 
-}
-
-//update order status for admin panel
 const updateStatus = async (req, res) => {
-    try{
-        const {orderId, status} = req.body;
-        await orderModel.findByIdAndUpdate(orderId, {status});
-        res.json({success: true, message: "Status updated successfully"});
-    }catch (error) {
+    try {
+        const { orderId, status } = req.body;
+        await orderModel.findByIdAndUpdate(orderId, { status });
+        res.json({ success: true, message: 'Status updated successfully' });
+    } catch (error) {
         console.log(error);
-        res.json({success: false, message: error.message});
+        res.json({ success: false, message: error.message });
     }
+};
 
-}
-
-export { placeOrder, placeOrderBkash, placeOrderNagad, allOrders, userOrders, updateStatus };
+export {
+    placeOrder,
+    placeOrderBkash, verifyBkash,
+    placeOrderNagad, verifyNagad,
+    verifySSL,
+    allOrders, userOrders, updateStatus,
+};
