@@ -1,91 +1,73 @@
-import React, { useContext } from "react";
-import { ShopContext } from "../context/ShopContext";
-import Title from "../components/Title";
-import axios from "axios";
-import { useEffect } from "react";
+import React, { useEffect, useState } from 'react'
+import axios from 'axios'
+import { backendUrl, currency } from '../App'
+import { toast } from 'react-toastify'
 
-const Orders = () => {
-  const { backend_url, token, currency } = useContext(ShopContext);
+const Orders = ({ token }) => {
 
-  const [orderData, setOrderData] = React.useState([])
+  const [orders, setOrders] = useState([])
 
-  const loadOrderData = async () => {
+  const fetchAllOrders = async () => {
+    if (!token) return null
     try {
-      if (!token) {
-        return null;
-      }
-
-      const response = await axios.post(backend_url + "/api/order/userorders", {}, {
-        headers: {
-          token: token
-        }
-      });
+      const response = await axios.post(backendUrl + '/api/order/list', {}, { headers: { token } })
       if (response.data.success) {
-        let allordersItem = [];
-        response.data.orders.map((order) => {
-          order.items.map((item) => {
-            item['status'] = order.status;
-            item['payment'] = order.payment;
-            item['paymentMethod'] = order.paymentMethod;
-            item['date'] = order.date;
-            allordersItem.push(item);
-          })
-        })
-        setOrderData(allordersItem.reverse());
+        setOrders(response.data.orders.reverse())
+      } else {
+        toast.error(response.data.message)
       }
+    } catch (error) {
+      toast.error(error.message)
     }
-    catch (error) {
-      console.log(error);
+  }
+
+  const statusHandler = async (event, orderId) => {
+    try {
+      const response = await axios.post(backendUrl + '/api/order/status', { orderId, status: event.target.value }, { headers: { token } })
+      if (response.data.success) await fetchAllOrders()
+    } catch (error) {
+      toast.error(error.message)
     }
   }
 
   useEffect(() => {
-    loadOrderData();
+    fetchAllOrders()
   }, [token])
 
   return (
-    <div className="border-t pt-16">
-      <div className="text-2xl">
-        <Title text1={"MY"} text2={"ORDERS"} />
-      </div>
+    <div>
+      <h3>Order Page</h3>
       <div>
-        {orderData.map((item, index) => (
-          <div
-            key={index}
-            className="py-4 border-b border-t text-gray-700 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
-          >
-            <div className="flex items-start gap-6 text-sm">
-              <img className="w-16 sm:w-20" src={item.image[0]} alt="" />
-              <div>
-                <p className="sm:text-base font-medium">{item.name}</p>
-                <div className="flex items-center gap-3 mt-1 text-base text-gray-700">
-                  <p>{currency} {item.price}</p>
-                  <p>Quantity: {item.quantity}</p>
-                  <p>Size: {item.size}</p>
-                </div>
-                <p className="mt-1">
-                  Date: <span className="text-gray-400">{new Date(item.date).toLocaleDateString("en-GB")}</span>
-                </p>
-                <p className="mt-1">
-                  Payment: <span className="text-gray-400">{item.payment ? "Paid" : "Not Paid"}</span>
-                </p>
-                <p className="mt-1">
-                  Method: <span className="text-gray-400">{item.paymentMethod}</span>
-                </p>
-              </div>
+        {orders.map((order, index) => (
+          <div key={index} className='grid grid-cols-1 sm:grid-cols-[0.5fr_2fr_1fr] lg:grid-cols-[0.5fr_2fr_1fr_1fr_1fr] gap-3 items-start border-2 border-gray-200 p-5 md:p-8 my-3 md:my-4 text-xs sm:text-sm text-gray-700'>
+            <div>
+              <img className='w-12' src={order.items[0].image[0]} alt='' />
             </div>
-            <div className="md:w-1/2 flex justify-between">
-              <div className="flex items-center gap-2">
-                <p className="min-w-2 h-2 rounded-full bg-green-500"></p>
-                <p className="text-sm md:text-base">{item.status}</p>
-              </div>
-              <button onClick={loadOrderData} className="border px-4 py-2 text-sm font-medium rounded-sm">Track Order</button>
+            <div>
+              <p className='font-semibold'>{order.items.map((item) => item.name + ' x ' + item.quantity + ' (' + item.size + ')').join(', ')}</p>
+              <p className='mt-2'>{order.address.firstName} {order.address.lastName}</p>
+              <p>{order.address.street}, {order.address.city}, {order.address.state}, {order.address.country} - {order.address.zipcode}</p>
+              <p>{order.address.phone}</p>
             </div>
+            <div>
+              <p>Items: {order.items.length}</p>
+              <p>Method: {order.paymentMethod}</p>
+              <p>Payment: {order.payment ? 'Done' : 'Pending'}</p>
+              <p>Date: {new Date(order.date).toLocaleDateString()}</p>
+            </div>
+            <p className='text-sm font-medium'>{currency}{order.amount}</p>
+            <select onChange={(event) => statusHandler(event, order._id)} value={order.status} className='p-2 font-semibold'>
+              <option value="Order Placed">Order Placed</option>
+              <option value="Packing">Packing</option>
+              <option value="Shipped">Shipped</option>
+              <option value="Out for delivery">Out for delivery</option>
+              <option value="Delivered">Delivered</option>
+            </select>
           </div>
         ))}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Orders;
+export default Orders
