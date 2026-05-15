@@ -13,6 +13,7 @@ import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import SearchBar from './components/SearchBar'
 import Verify from './pages/Verify';
+import OurPolicy from './components/OurPolicy'
 
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -36,6 +37,7 @@ const App = () => {
         <Route path='/place-order' element ={<PlaceOrder />} />  {/* ✅ fixed: lowercase 'o' */}
         <Route path='/orders' element ={<Orders />} />
         <Route path='/verify/ssl' element={<Verify />} />
+        <Route path='/OurPolicy' element={<OurPolicy />} />
         
       </Routes>
       <Footer />
