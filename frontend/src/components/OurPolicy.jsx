@@ -1,6 +1,5 @@
 import React from 'react'
 import { assets } from '../assets/assets'
-import NewsLetteraBox from '../components/NewsLetteraBox'
 import Title from '../components/Title'
 
 const PrivacyPolicy = () => {
@@ -28,7 +27,6 @@ const PrivacyPolicy = () => {
         </div>
       </div>
 
-      <NewsLetteraBox />
     </div>
   )
 }
